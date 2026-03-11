@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     git \
     ca-certificates \
+    && ln -sf /usr/bin/python3 /usr/bin/python \
     && curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp \
     && chmod a+rx /usr/local/bin/yt-dlp \
     && apt-get clean \
