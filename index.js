@@ -29,6 +29,9 @@ if (!fs.existsSync(downloadsDir)) {
 
 const PREFIX = "!";
 
+// Tu número de WhatsApp (con código de país). Solo este número puede usar el bot.
+const OWNER_NUMBER = "51902931327";
+
 const commands = {
   menu: menuCmd,
   musica: musicaCmd,
@@ -92,6 +95,10 @@ async function startBot() {
         if (!msg.message) continue;
 
         const jid = msg.key.remoteJid;
+
+        // Solo responder a tu número
+        const senderNumber = jid.replace("@s.whatsapp.net", "");
+        if (senderNumber !== OWNER_NUMBER) continue;
         const text =
           msg.message.conversation ||
           msg.message.extendedTextMessage?.text ||
