@@ -1,8 +1,11 @@
 const OpenAI = require("openai");
 const { getJid } = require("../utils/helpers");
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || "",
+// Groq es GRATIS - usa modelos Llama 3
+// Consigue tu API key gratis en: https://console.groq.com/keys
+const groq = new OpenAI({
+  apiKey: process.env.GROQ_API_KEY || "",
+  baseURL: "https://api.groq.com/openai/v1",
 });
 
 async function execute(sock, msg, args) {
@@ -15,9 +18,9 @@ async function execute(sock, msg, args) {
     return;
   }
 
-  if (!process.env.OPENAI_API_KEY) {
+  if (!process.env.GROQ_API_KEY) {
     await sock.sendMessage(jid, {
-      text: "⚠️ La IA no está configurada. Falta la variable OPENAI_API_KEY.",
+      text: "⚠️ La IA no está configurada. Falta la variable GROQ_API_KEY.\nConsigue tu key gratis en: https://console.groq.com/keys",
     });
     return;
   }
@@ -25,8 +28,8 @@ async function execute(sock, msg, args) {
   await sock.sendMessage(jid, { text: "🤖 Pensando..." });
 
   try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+    const completion = await groq.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
       messages: [
         {
           role: "system",
