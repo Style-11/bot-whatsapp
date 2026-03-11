@@ -91,34 +91,59 @@ async function startBot() {
 
     for (const msg of messages) {
       try {
-        if (msg.key.fromMe) continue;
         if (!msg.message) continue;
 
         const jid = msg.key.remoteJid;
+        if (!jid) continue;
 
-        // Solo responder a tu número
-        const senderNumber = jid.replace("@s.whatsapp.net", "");
-        if (senderNumber !== OWNER_NUMBER) continue;
+        // Si el mensaje es tuyo (fromMe), procesar comandos y links
+        // Si el mensaje es de otro, solo auto-descargar links en tu chat privado
+        const isFromMe = msg.key.fromMe;
+        const isPrivateChat = jid.endsWith("@s.whatsapp.net");
+
+        // En chats privados: solo responder si eres tú quien escribe
+        // O si alguien te manda un link (auto-descarga)
+        if (!isFromMe && isPrivateChat) {
+          // Alguien te mandó un mensaje — solo auto-descargar links
+          const text =
+            msg.message.conversation ||
+            msg.message.extendedTextMessage?.text ||
+            "";
+          const linkPatterns = [
+            /https?:\/\/(www\.|vm\.|vt\.)?tiktok\.com\/\S+/i,
+            /https?:\/\/(www\.|m\.)?youtube\.com\/watch\S+/i,
+            /https?:\/\/youtu\.be\/\S+/i,
+            /https?:\/\/youtube\.com\/shorts\/\S+/i,
+            /https?:\/\/(www\.)?instagram\.com\/(reel|p)\/\S+/i,
+          ];
+          const urlMatch = text.match(/https?:\/\/\S+/i);
+          if (urlMatch && linkPatterns.some((p) => p.test(text))) {
+            console.log(`🔗 Link de contacto detectado: ${urlMatch[0]}`);
+            await commands.video.execute(sock, msg, urlMatch[0]);
+          }
+          continue;
+        }
+
+        // Ignorar mensajes de grupos (solo tu chat privado)
+        if (!isFromMe) continue;
         const text =
           msg.message.conversation ||
           msg.message.extendedTextMessage?.text ||
           msg.message.imageMessage?.caption ||
           "";
 
-        // Auto-detectar links de TikTok, YouTube, Instagram y descargar automáticamente
-        const linkPatterns = [
+        // Auto-detectar links que tú mismo pegas
+        const myLinkPatterns = [
           /https?:\/\/(www\.|vm\.|vt\.)?tiktok\.com\/\S+/i,
           /https?:\/\/(www\.|m\.)?youtube\.com\/watch\S+/i,
           /https?:\/\/youtu\.be\/\S+/i,
           /https?:\/\/youtube\.com\/shorts\/\S+/i,
           /https?:\/\/(www\.)?instagram\.com\/(reel|p)\/\S+/i,
         ];
-
-        const linkMatch = linkPatterns.some((p) => p.test(text));
-        if (linkMatch && !text.startsWith(PREFIX)) {
+        if (!text.startsWith(PREFIX) && myLinkPatterns.some((p) => p.test(text))) {
           const urlMatch = text.match(/https?:\/\/\S+/i);
           if (urlMatch) {
-            console.log(`🔗 Link detectado automáticamente: ${urlMatch[0]}`);
+            console.log(`🔗 Link detectado: ${urlMatch[0]}`);
             await commands.video.execute(sock, msg, urlMatch[0]);
             continue;
           }
